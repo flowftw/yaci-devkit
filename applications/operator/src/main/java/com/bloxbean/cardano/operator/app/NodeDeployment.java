@@ -11,8 +11,9 @@ public class NodeDeployment extends CRUDKubernetesDependentResource<Deployment, 
 
     @Override
     protected Deployment desired(CardanoNode cardanoNode, Context<CardanoNode> context) {
-        Deployment deployemnt = ReconcilerUtils.loadYaml(Deployment.class, Utils.class, "deployment.yaml");
-        return deployemnt;
+        Deployment deployment = ReconcilerUtils.loadYaml(Deployment.class, Utils.class, "deployment.yaml");
+        deployment.getMetadata().setName(cardanoNode.getMetadata().getName());
+        return deployment;
     }
     
 }
