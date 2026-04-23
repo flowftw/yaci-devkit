@@ -9,6 +9,17 @@ plugins {
 dependencies {
     implementation("io.javaoperatorsdk:operator-framework-spring-boot-starter:6.1.2")
     implementation("org.projectlombok:lombok:1.18.42")
+
+    // Fabric8 annotation processor that generates CRDs from CustomResource classes
+    annotationProcessor("io.fabric8:crd-generator-apt:7.3.1")
+}
+
+// Generate CRD manifests from annotated CustomResource classes
+tasks.register('generateCrd', Copy) {
+    dependsOn tasks.named('classes')
+    from(layout.buildDirectory.dir('classes/java/main/META-INF/fabric8'))
+    include('*.yml', '*.yaml', '*.json')
+    into(layout.projectDirectory.dir('k8s/crd'))
 }
 
 application {

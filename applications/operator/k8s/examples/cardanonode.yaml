@@ -1,0 +1,9 @@
+apiVersion: com.bloxbean/v1
+kind: CardanoNode
+metadata:
+  name: cardano-node-sample
+  namespace: default
+spec:
+  image: blinklabs/cardano-node:main
+  replicas: 1
+  network: mainnet

@@ -17,7 +17,8 @@ spec:
     spec:
       containers:
       - name: cardano-node
-        image: cardanosolutions/cardano-node:latest
+        image: blinklabs/cardano-node:main
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3001
           name: node-port
