@@ -1,15 +1,16 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: cardano-node
   namespace: default
   labels:
     app: cardano-node
 spec:
+  serviceName: cardano-node
+  replicas: 1
   selector:
     matchLabels:
       app: cardano-node
-  replicas: 1
   template:
     metadata:
       labels:
@@ -30,6 +31,17 @@ spec:
         volumeMounts:
         - name: node-data
           mountPath: /data
+        - name: node-ipc
+          mountPath: /ipc
       volumes:
-      - name: node-data
+      - name: node-ipc
         emptyDir: {}
+  volumeClaimTemplates:
+  - metadata:
+      name: node-data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi

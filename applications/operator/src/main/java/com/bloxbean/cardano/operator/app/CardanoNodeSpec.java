@@ -12,4 +12,7 @@ public class CardanoNodeSpec {
     // Used when network=devnet
     private String devnetConfigMap;
     private String devnetKeysSecret;
+
+    // Persistent storage size for node data (e.g. "10Gi")
+    private String storage;
 }

@@ -6,9 +6,10 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.PodSpec;
+import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
-import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
@@ -20,19 +21,20 @@ import java.util.List;
 import java.util.Map;
 
 @KubernetesDependent
-public class NodeDeployment extends CRUDKubernetesDependentResource<Deployment, CardanoNode> {
+public class NodeStatefulSet extends CRUDKubernetesDependentResource<StatefulSet, CardanoNode> {
 
     private static final String DEFAULT_IMAGE = "blinklabs/cardano-node:10.5.1";
     private static final String DEFAULT_NETWORK = "mainnet";
     private static final int DEFAULT_REPLICAS = 1;
+    private static final String DEFAULT_STORAGE = "10Gi";
 
-    public NodeDeployment() {
-        super(Deployment.class);
+    public NodeStatefulSet() {
+        super(StatefulSet.class);
     }
 
     @Override
-    protected Deployment desired(CardanoNode cardanoNode, Context<CardanoNode> context) {
-        Deployment deployment = ReconcilerUtils.loadYaml(Deployment.class, NodeDeployment.class, "deployment.yaml");
+    protected StatefulSet desired(CardanoNode cardanoNode, Context<CardanoNode> context) {
+        StatefulSet statefulSet = ReconcilerUtils.loadYaml(StatefulSet.class, NodeStatefulSet.class, "statefulset.yaml");
 
         var metadata = cardanoNode.getMetadata();
         var spec = cardanoNode.getSpec();
@@ -45,15 +47,16 @@ public class NodeDeployment extends CRUDKubernetesDependentResource<Deployment, 
 
         String image = (spec != null && spec.getImage() != null) ? spec.getImage() : DEFAULT_IMAGE;
         int replicas = spec != null && spec.getReplicas() != null ? spec.getReplicas() : DEFAULT_REPLICAS;
+        String storage = (spec != null && spec.getStorage() != null) ? spec.getStorage() : DEFAULT_STORAGE;
 
-        deployment.getMetadata().setName(resourceName);
-        deployment.getMetadata().setNamespace(namespace);
+        statefulSet.getMetadata().setName(resourceName);
+        statefulSet.getMetadata().setNamespace(namespace);
 
         Map<String, String> labels = new HashMap<>();
         labels.put("app", "cardano-node");
         labels.put("cardano-node-resource", resourceName);
         labels.put("app.kubernetes.io/managed-by", "java-operator-sdk");
-        deployment.getMetadata().setLabels(labels);
+        statefulSet.getMetadata().setLabels(labels);
 
         if (metadata.getUid() != null) {
             OwnerReference ownerReference = new OwnerReferenceBuilder()
@@ -64,27 +67,38 @@ public class NodeDeployment extends CRUDKubernetesDependentResource<Deployment, 
                     .withController(true)
                     .withBlockOwnerDeletion(true)
                     .build();
-            deployment.getMetadata().setOwnerReferences(java.util.Collections.singletonList(ownerReference));
+            statefulSet.getMetadata().setOwnerReferences(java.util.Collections.singletonList(ownerReference));
         }
 
-        if (deployment.getSpec() != null) {
-            deployment.getSpec().setReplicas(replicas);
+        if (statefulSet.getSpec() != null) {
+            statefulSet.getSpec().setReplicas(replicas);
+            statefulSet.getSpec().setServiceName(resourceName);
 
-            if (deployment.getSpec().getSelector() != null) {
-                deployment.getSpec().getSelector().setMatchLabels(labels);
+            if (statefulSet.getSpec().getSelector() != null) {
+                statefulSet.getSpec().getSelector().setMatchLabels(labels);
             }
 
-            if (deployment.getSpec().getTemplate() != null
-                    && deployment.getSpec().getTemplate().getMetadata() != null) {
-                deployment.getSpec().getTemplate().getMetadata().setLabels(labels);
+            if (statefulSet.getSpec().getTemplate() != null
+                    && statefulSet.getSpec().getTemplate().getMetadata() != null) {
+                statefulSet.getSpec().getTemplate().getMetadata().setLabels(labels);
             }
 
-            if (deployment.getSpec().getTemplate() != null
-                    && deployment.getSpec().getTemplate().getSpec() != null
-                    && deployment.getSpec().getTemplate().getSpec().getContainers() != null
-                    && !deployment.getSpec().getTemplate().getSpec().getContainers().isEmpty()) {
+            // Set PVC storage size
+            if (statefulSet.getSpec().getVolumeClaimTemplates() != null
+                    && !statefulSet.getSpec().getVolumeClaimTemplates().isEmpty()) {
+                var pvc = statefulSet.getSpec().getVolumeClaimTemplates().get(0);
+                if (pvc.getSpec() != null && pvc.getSpec().getResources() != null
+                        && pvc.getSpec().getResources().getRequests() != null) {
+                    pvc.getSpec().getResources().getRequests().put("storage", new Quantity(storage));
+                }
+            }
 
-                PodSpec podSpec = deployment.getSpec().getTemplate().getSpec();
+            if (statefulSet.getSpec().getTemplate() != null
+                    && statefulSet.getSpec().getTemplate().getSpec() != null
+                    && statefulSet.getSpec().getTemplate().getSpec().getContainers() != null
+                    && !statefulSet.getSpec().getTemplate().getSpec().getContainers().isEmpty()) {
+
+                PodSpec podSpec = statefulSet.getSpec().getTemplate().getSpec();
                 Container container = podSpec.getContainers().get(0);
                 container.setImage(image);
 
@@ -96,7 +110,7 @@ public class NodeDeployment extends CRUDKubernetesDependentResource<Deployment, 
             }
         }
 
-        return deployment;
+        return statefulSet;
     }
 
     private void configureDevnetContainer(CardanoNode cr, CardanoNodeSpec spec, PodSpec podSpec, Container container) {
@@ -109,7 +123,6 @@ public class NodeDeployment extends CRUDKubernetesDependentResource<Deployment, 
                 : baseName + "-devnet-keys";
 
         podSpec.setVolumes(List.of(
-                new VolumeBuilder().withName("node-data").withNewEmptyDir().endEmptyDir().build(),
                 new VolumeBuilder().withName("node-ipc").withNewEmptyDir().endEmptyDir().build(),
                 new VolumeBuilder().withName("devnet-config").withNewConfigMap().withName(configMapName).endConfigMap().build(),
                 new VolumeBuilder().withName("devnet-keys").withNewSecret().withSecretName(keysSecretName).withDefaultMode(256).endSecret().build()

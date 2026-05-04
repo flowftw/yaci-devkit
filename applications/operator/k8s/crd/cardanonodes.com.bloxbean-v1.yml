@@ -27,6 +27,8 @@ spec:
                 type: string
               replicas:
                 type: integer
+              storage:
+                type: string
             type: object
           status:
             properties:

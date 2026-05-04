@@ -1,6 +1,6 @@
 package com.bloxbean.cardano.operator.app;
 
-import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 @Workflow(dependents = {
         @Dependent(name = "devnetConfig", type = DevnetConfigMap.class, reconcilePrecondition = DevnetModeCondition.class),
         @Dependent(name = "devnetKeys", type = DevnetKeysSecret.class, reconcilePrecondition = DevnetModeCondition.class),
-        @Dependent(type = NodeDeployment.class)
+        @Dependent(type = NodeStatefulSet.class)
 })
 public class CardanoNodeReconciler implements Reconciler<CardanoNode> {
 
@@ -25,7 +25,7 @@ public class CardanoNodeReconciler implements Reconciler<CardanoNode> {
         CardanoNodeStatus current = cardanoNode.getStatus();
         CardanoNodeStatus desired = copy(current);
 
-        Deployment deployment = context.getSecondaryResource(Deployment.class).orElse(null);
+        StatefulSet statefulSet = context.getSecondaryResource(StatefulSet.class).orElse(null);
 
         desired.setObservedGeneration(cardanoNode.getMetadata().getGeneration());
         desired.setDeploymentName(cardanoNode.getMetadata().getName());
@@ -37,12 +37,12 @@ public class CardanoNodeReconciler implements Reconciler<CardanoNode> {
 
         desired.setReplicas(requestedReplicas);
 
-        if (deployment == null || deployment.getStatus() == null) {
+        if (statefulSet == null || statefulSet.getStatus() == null) {
             desired.setReadyReplicas(0);
             desired.setPhase("Pending");
-            desired.setMessage("Waiting for Deployment to be created");
+            desired.setMessage("Waiting for StatefulSet to be created");
         } else {
-            Integer ready = deployment.getStatus().getReadyReplicas();
+            Integer ready = statefulSet.getStatus().getReadyReplicas();
             int readyReplicas = ready != null ? ready : 0;
             desired.setReadyReplicas(readyReplicas);
 
@@ -51,7 +51,7 @@ public class CardanoNodeReconciler implements Reconciler<CardanoNode> {
                 desired.setMessage("Cardano node is ready");
             } else {
                 desired.setPhase("Progressing");
-                desired.setMessage("Cardano node deployment is progressing");
+                desired.setMessage("Cardano node is progressing");
             }
         }
 
