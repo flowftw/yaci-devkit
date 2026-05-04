@@ -22,7 +22,7 @@ import java.util.Map;
 @KubernetesDependent
 public class NodeDeployment extends CRUDKubernetesDependentResource<Deployment, CardanoNode> {
 
-    private static final String DEFAULT_IMAGE = "blinklabs/cardano-node:main";
+    private static final String DEFAULT_IMAGE = "blinklabs/cardano-node:10.5.0";
     private static final String DEFAULT_NETWORK = "mainnet";
     private static final int DEFAULT_REPLICAS = 1;
 

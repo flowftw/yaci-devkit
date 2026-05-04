@@ -19,7 +19,7 @@ import java.util.Objects;
 @KubernetesDependent
 public class DevnetConfigMap extends CRUDKubernetesDependentResource<ConfigMap, CardanoNode> {
 
-    private static final String TEMPLATE_BASE = "com/bloxbean/cardano/operator/app/devnet/genesis-templates";
+    private static final String TEMPLATE_BASE = "genesis-templates";
     private static final Mustache.Compiler COMPILER = Mustache.compiler();
 
     public DevnetConfigMap() {
@@ -95,14 +95,13 @@ public class DevnetConfigMap extends CRUDKubernetesDependentResource<ConfigMap, 
     }
 
     private String readStaticResource(String path) {
-        String fullPath = "com/bloxbean/cardano/operator/app/" + path;
-        try (var is = DevnetConfigMap.class.getClassLoader().getResourceAsStream(fullPath)) {
+        try (var is = DevnetConfigMap.class.getClassLoader().getResourceAsStream(path)) {
             if (is == null) {
-                throw new IllegalStateException("Missing resource: " + fullPath);
+                throw new IllegalStateException("Missing resource: " + path);
             }
             return new String(is.readAllBytes(), StandardCharsets.UTF_8);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to read resource: " + fullPath, e);
+            throw new RuntimeException("Failed to read resource: " + path, e);
         }
     }
 

@@ -48,7 +48,7 @@ public class DevnetKeysSecret extends CRUDKubernetesDependentResource<Secret, Ca
     }
 
     private String readResource(String path) {
-        String fullPath = "com/bloxbean/cardano/operator/app/" + path;
+        String fullPath = path;
         try (InputStream is = DevnetKeysSecret.class.getClassLoader().getResourceAsStream(fullPath)) {
             if (is == null) {
                 throw new IllegalStateException("Missing resource: " + fullPath);

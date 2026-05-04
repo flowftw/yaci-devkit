@@ -59,7 +59,7 @@ class NodeDeploymentTest {
         Deployment deployment = nodeDeployment.desired(cardanoNode, null);
         var container = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
 
-        assertEquals("blinklabs/cardano-node:main", container.getImage());
+        assertEquals("blinklabs/cardano-node:10.5.0", container.getImage());
         assertEquals("cardano-node", container.getCommand().get(0));
         assertTrue(container.getArgs().contains("--config"));
         assertTrue(container.getArgs().contains("/etc/cardano/devnet/configuration.json"));
