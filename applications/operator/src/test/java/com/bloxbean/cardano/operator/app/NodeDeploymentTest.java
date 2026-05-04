@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class NodeDeploymentTest {
 
@@ -37,5 +38,33 @@ class NodeDeploymentTest {
                 .findFirst()
                 .orElseThrow()
                 .getValue());
+    }
+
+    @Test
+    void testDevnetModeUsesCardanoNodeImageAndDevnetCommand() {
+        NodeDeployment nodeDeployment = new NodeDeployment();
+
+        CardanoNodeSpec spec = new CardanoNodeSpec();
+        spec.setNetwork("devnet");
+        spec.setDevnetConfigMap("devnet-config");
+        spec.setDevnetKeysSecret("devnet-keys");
+
+        CardanoNode cardanoNode = new CardanoNode();
+        cardanoNode.setSpec(spec);
+        cardanoNode.setMetadata(new ObjectMetaBuilder()
+                .withName("devnet-node")
+                .withNamespace("default")
+                .build());
+
+        Deployment deployment = nodeDeployment.desired(cardanoNode, null);
+        var container = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
+
+        assertEquals("blinklabs/cardano-node:main", container.getImage());
+        assertEquals("cardano-node", container.getCommand().get(0));
+        assertTrue(container.getArgs().contains("--config"));
+        assertTrue(container.getArgs().contains("/etc/cardano/devnet/configuration.json"));
+        assertTrue(container.getPorts().stream().anyMatch(p -> p.getContainerPort() == 3001));
+        assertTrue(deployment.getSpec().getTemplate().getSpec().getVolumes().stream()
+                .anyMatch(v -> "devnet-config".equals(v.getName())));
     }
 }

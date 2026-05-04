@@ -9,6 +9,8 @@ plugins {
 dependencies {
     implementation("io.javaoperatorsdk:operator-framework-spring-boot-starter:6.1.2")
     implementation("org.projectlombok:lombok:1.18.42")
+    implementation("com.samskivert:jmustache:1.16")
+    implementation("com.bloxbean.cardano:genesis-config")
 
     // Fabric8 annotation processor that generates CRDs from CustomResource classes
     annotationProcessor("io.fabric8:crd-generator-apt:7.3.1")

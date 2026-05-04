@@ -1,8 +1,13 @@
 package com.bloxbean.cardano.operator.app;
 
+import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.ContainerPortBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
+import io.fabric8.kubernetes.api.model.PodSpec;
+import io.fabric8.kubernetes.api.model.VolumeBuilder;
+import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -35,8 +40,10 @@ public class NodeDeployment extends CRUDKubernetesDependentResource<Deployment, 
         String resourceName = metadata.getName();
         String namespace = metadata.getNamespace();
 
-        String image = spec != null && spec.getImage() != null ? spec.getImage() : DEFAULT_IMAGE;
         String network = spec != null && spec.getNetwork() != null ? spec.getNetwork() : DEFAULT_NETWORK;
+        boolean devnet = "devnet".equalsIgnoreCase(network) || "local-devnet".equalsIgnoreCase(network);
+
+        String image = (spec != null && spec.getImage() != null) ? spec.getImage() : DEFAULT_IMAGE;
         int replicas = spec != null && spec.getReplicas() != null ? spec.getReplicas() : DEFAULT_REPLICAS;
 
         deployment.getMetadata().setName(resourceName);
@@ -77,13 +84,66 @@ public class NodeDeployment extends CRUDKubernetesDependentResource<Deployment, 
                     && deployment.getSpec().getTemplate().getSpec().getContainers() != null
                     && !deployment.getSpec().getTemplate().getSpec().getContainers().isEmpty()) {
 
-                var container = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
+                PodSpec podSpec = deployment.getSpec().getTemplate().getSpec();
+                Container container = podSpec.getContainers().get(0);
                 container.setImage(image);
-                upsertEnvVar(container.getEnv(), "NETWORK", network, container::setEnv);
+
+                if (devnet) {
+                    configureDevnetContainer(cardanoNode, spec, podSpec, container);
+                } else {
+                    upsertEnvVar(container.getEnv(), "NETWORK", network, container::setEnv);
+                }
             }
         }
 
         return deployment;
+    }
+
+    private void configureDevnetContainer(CardanoNode cr, CardanoNodeSpec spec, PodSpec podSpec, Container container) {
+        String baseName = cr.getMetadata().getName();
+        String configMapName = spec != null && spec.getDevnetConfigMap() != null
+                ? spec.getDevnetConfigMap()
+                : baseName + "-devnet-config";
+        String keysSecretName = spec != null && spec.getDevnetKeysSecret() != null
+                ? spec.getDevnetKeysSecret()
+                : baseName + "-devnet-keys";
+
+        podSpec.setVolumes(List.of(
+                new VolumeBuilder().withName("node-data").withNewEmptyDir().endEmptyDir().build(),
+                new VolumeBuilder().withName("node-ipc").withNewEmptyDir().endEmptyDir().build(),
+                new VolumeBuilder().withName("devnet-config").withNewConfigMap().withName(configMapName).endConfigMap().build(),
+                new VolumeBuilder().withName("devnet-keys").withNewSecret().withSecretName(keysSecretName).withDefaultMode(256).endSecret().build()
+        ));
+
+        container.setVolumeMounts(List.of(
+                new VolumeMountBuilder().withName("node-data").withMountPath("/data").build(),
+                new VolumeMountBuilder().withName("node-ipc").withMountPath("/ipc").build(),
+                new VolumeMountBuilder().withName("devnet-config").withMountPath("/etc/cardano/devnet").withReadOnly(true).build(),
+                new VolumeMountBuilder().withName("devnet-keys").withMountPath("/etc/cardano/devnet/pool-keys").withReadOnly(true).build()
+        ));
+
+        container.setCommand(List.of("cardano-node"));
+        container.setArgs(List.of(
+                "run",
+                "--config", "/etc/cardano/devnet/configuration.json",
+                "--topology", "/etc/cardano/devnet/topology.json",
+                "--database-path", "/data/db",
+                "--socket-path", "/ipc/node.sock",
+                "--shelley-kes-key", "/etc/cardano/devnet/pool-keys/kes.skey",
+                "--shelley-vrf-key", "/etc/cardano/devnet/pool-keys/vrf.skey",
+                "--byron-delegation-certificate", "/etc/cardano/devnet/pool-keys/byron-delegation.cert",
+                "--byron-signing-key", "/etc/cardano/devnet/pool-keys/byron-delegate.key",
+                "--shelley-operational-certificate", "/etc/cardano/devnet/pool-keys/opcert.cert",
+                "--port", "3001"
+        ));
+
+        container.setPorts(List.of(
+                new ContainerPortBuilder().withName("node-port").withContainerPort(3001).build(),
+                new ContainerPortBuilder().withName("prometheus").withContainerPort(12788).build()
+        ));
+
+        upsertEnvVar(container.getEnv(), "CARDANO_NODE_SOCKET_PATH", "/ipc/node.sock", container::setEnv);
+        upsertEnvVar(container.getEnv(), "NETWORK", "devnet", container::setEnv);
     }
 
     private void upsertEnvVar(List<EnvVar> envVars, String key, String value,

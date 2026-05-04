@@ -1,0 +1,85 @@
+{
+  "activeSlotsCoeff": {{activeSlotsCoeff}},
+  "epochLength": {{epochLength}},
+  "genDelegs": {
+    {{#genesisDelegs}}
+     "{{delegator}}": {
+      "delegate": "{{delegate}}",
+      "vrf": "{{{vrf}}}"
+     }{{^last}},
+     {{/last}}
+    {{/genesisDelegs}}
+  },
+  "initialFunds": {
+  {{^mainnet}}
+      {{#initialFunds}}
+      "{{key}}": {{value}}{{^last}},
+      {{/last}}
+      {{/initialFunds}}
+  {{/mainnet}}
+  },
+  "maxKESEvolutions": {{maxKESEvolutions}},
+  "maxLovelaceSupply": {{maxLovelaceSupply}},
+  "networkId": "{{networkId}}",
+  "networkMagic": {{protocolMagic}},
+  "protocolParams": {
+    "a0": {{poolPledgeInfluence}},
+    "decentralisationParam": {{#mainnet}}1{{/mainnet}}{{^mainnet}}{{decentralisationParam}}{{/mainnet}},
+    "eMax": {{eMax}},
+    "extraEntropy": {
+      "tag": "NeutralNonce"
+    },
+    "keyDeposit": {{keyDeposit}},
+    "maxBlockBodySize": {{maxBlockBodySize}},
+    "maxBlockHeaderSize": {{maxBlockHeaderSize}},
+    "maxTxSize": {{maxTxSize}},
+    "minFeeA": {{minFeeA}},
+    "minFeeB": {{minFeeB}},
+    "minPoolCost": {{minPoolCost}},
+    "minUTxOValue": {{minUTxOValue}},
+    "nOpt": {{nOpt}},
+    "poolDeposit": {{poolDeposit}},
+    "protocolVersion": {
+      "major": {{protocolMajorVer}},
+      "minor": {{protocolMinorVer}}
+    },
+    "rho": {{monetaryExpansionRate}},
+    "tau": {{treasuryGrowthRate}}
+  },
+  "securityParam": {{securityParam}},
+  "slotLength": {{slotLength}},
+  "slotsPerKESPeriod": {{slotsPerKESPeriod}},
+  "staking": {
+  "pools": {
+    {{^mainnet}}
+        {{#pools}}
+          "{{poolHash}}": {
+              "cost": {{cost}},
+              "margin": {{margin}},
+              "metadata": null,
+              "owners": [],
+              "pledge": 0,
+              "publicKey": "{{publicKey}}",
+              "relays": [],
+              "rewardAccount": {
+                "credential": {
+                  "{{rewardAccountType}}": "{{rewardAccountHash}}"
+                },
+                "network": "{{networkId}}"
+               },
+                "vrf": "{{vrf}}"
+            }{{^last}},{{/last}}
+          {{/pools}}
+    {{/mainnet}}
+    },
+    "stake": {
+    {{^mainnet}}
+              {{#defaultDelegators}}
+              "{{stakeKeyHash}}": "{{#poolHash}}{{poolHash}}{{/poolHash}}{{^poolHash}}{{pools.0.poolHash}}{{/poolHash}}"{{^last}},{{/last}}
+              {{/defaultDelegators}}
+    {{/mainnet}}
+    }
+  },
+  "systemStart": "2022-09-15T04:09:11.577484Z",
+  "updateQuorum": {{updateQuorum}}
+}

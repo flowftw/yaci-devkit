@@ -1,0 +1,18 @@
+apiVersion: com.bloxbean/v1
+kind: CardanoNode
+metadata:
+  name: cardano-node-devnet
+  namespace: default
+spec:
+  # Devnet mode keeps cardano-node image, but switches to devnet command/config mounts
+  network: devnet
+
+  # Optional (default: blinklabs/cardano-node:main)
+  image: blinklabs/cardano-node:main
+
+  replicas: 1
+
+  # Optional override names. If omitted, operator auto-generates:
+  # <name>-devnet-config and <name>-devnet-keys
+  # devnetConfigMap: cardano-node-devnet-config
+  # devnetKeysSecret: cardano-node-devnet-keys

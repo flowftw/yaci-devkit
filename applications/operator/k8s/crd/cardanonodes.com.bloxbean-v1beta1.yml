@@ -17,6 +17,10 @@ spec:
       properties:
         spec:
           properties:
+            devnetConfigMap:
+              type: string
+            devnetKeysSecret:
+              type: string
             image:
               type: string
             network:

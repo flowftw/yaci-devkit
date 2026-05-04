@@ -16,6 +16,8 @@ import org.springframework.stereotype.Component;
 @Component
 @ControllerConfiguration(generationAwareEventProcessing = true)
 @Workflow(dependents = {
+        @Dependent(name = "devnetConfig", type = DevnetConfigMap.class, reconcilePrecondition = DevnetModeCondition.class),
+        @Dependent(name = "devnetKeys", type = DevnetKeysSecret.class, reconcilePrecondition = DevnetModeCondition.class),
         @Dependent(type = NodeDeployment.class)
 })
 public class CardanoNodeReconciler implements Reconciler<CardanoNode> {

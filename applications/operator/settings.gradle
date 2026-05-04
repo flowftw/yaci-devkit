@@ -6,4 +6,6 @@ pluginManagement {
     }
 }
 
-rootProject.name = 'yaci-cli'
+rootProject.name = 'yaci-operator'
+
+includeBuild '../genesis-config'
