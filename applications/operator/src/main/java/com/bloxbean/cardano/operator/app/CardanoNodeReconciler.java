@@ -9,8 +9,6 @@ import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 
 import java.time.OffsetDateTime;
-import java.util.Objects;
-
 import org.springframework.stereotype.Component;
 
 @Component
@@ -83,18 +81,6 @@ public class CardanoNodeReconciler implements Reconciler<CardanoNode> {
     }
 
     private boolean statusEquals(CardanoNodeStatus a, CardanoNodeStatus b) {
-        if (a == b) {
-            return true;
-        }
-        if (a == null || b == null) {
-            return false;
-        }
-
-        return Objects.equals(a.getPhase(), b.getPhase())
-                && Objects.equals(a.getMessage(), b.getMessage())
-                && Objects.equals(a.getDeploymentName(), b.getDeploymentName())
-                && Objects.equals(a.getReplicas(), b.getReplicas())
-                && Objects.equals(a.getReadyReplicas(), b.getReadyReplicas())
-                && Objects.equals(a.getObservedGeneration(), b.getObservedGeneration());
+        return java.util.Objects.equals(a, b);
     }
 }
