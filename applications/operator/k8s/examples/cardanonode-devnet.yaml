@@ -8,7 +8,7 @@ spec:
   network: devnet
 
   # Optional (default: blinklabs/cardano-node:main)
-  image: blinklabs/cardano-node:main
+  image: blinklabs/cardano-node:10.5.1
 
   replicas: 1
 

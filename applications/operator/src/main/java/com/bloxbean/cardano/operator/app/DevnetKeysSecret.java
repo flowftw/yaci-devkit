@@ -8,6 +8,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Map;
 
 @KubernetesDependent
@@ -30,11 +31,13 @@ public class DevnetKeysSecret extends CRUDKubernetesDependentResource<Secret, Ca
                 .endMetadata()
                 .withType("Opaque")
                 .withStringData(Map.of(
-                        "kes.skey", readResource("devnet/pool-keys/kes.skey"),
-                        "vrf.skey", readResource("devnet/pool-keys/vrf.skey"),
-                        "byron-delegation.cert", readResource("devnet/pool-keys/byron-delegation.cert"),
-                        "byron-delegate.key", readResource("devnet/pool-keys/byron-delegate.key"),
-                        "opcert.cert", readResource("devnet/pool-keys/opcert.cert")
+                        "kes.skey", readTextResource("devnet/pool-keys/kes.skey"),
+                        "vrf.skey", readTextResource("devnet/pool-keys/vrf.skey"),
+                        "byron-delegation.cert", readTextResource("devnet/pool-keys/byron-delegation.cert"),
+                        "opcert.cert", readTextResource("devnet/pool-keys/opcert.cert")
+                ))
+                .withData(Map.of(
+                        "byron-delegate.key", readBinaryBase64("devnet/pool-keys/byron-delegate.key")
                 ))
                 .build();
     }
@@ -47,15 +50,25 @@ public class DevnetKeysSecret extends CRUDKubernetesDependentResource<Secret, Ca
         return cr.getMetadata().getName() + "-devnet-keys";
     }
 
-    private String readResource(String path) {
-        String fullPath = path;
-        try (InputStream is = DevnetKeysSecret.class.getClassLoader().getResourceAsStream(fullPath)) {
+    private String readTextResource(String path) {
+        try (InputStream is = DevnetKeysSecret.class.getClassLoader().getResourceAsStream(path)) {
             if (is == null) {
-                throw new IllegalStateException("Missing resource: " + fullPath);
+                throw new IllegalStateException("Missing resource: " + path);
             }
             return new String(is.readAllBytes(), StandardCharsets.UTF_8);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to read resource: " + fullPath, e);
+            throw new RuntimeException("Failed to read resource: " + path, e);
+        }
+    }
+
+    private String readBinaryBase64(String path) {
+        try (InputStream is = DevnetKeysSecret.class.getClassLoader().getResourceAsStream(path)) {
+            if (is == null) {
+                throw new IllegalStateException("Missing resource: " + path);
+            }
+            return Base64.getEncoder().encodeToString(is.readAllBytes());
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to read resource: " + path, e);
         }
     }
 }

@@ -4,6 +4,6 @@ metadata:
   name: cardano-node-sample
   namespace: default
 spec:
-  image: blinklabs/cardano-node:main
+  image: blinklabs/cardano-node:10.5.1
   replicas: 1
   network: mainnet
