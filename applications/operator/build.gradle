@@ -7,7 +7,7 @@ plugins {
 }
 
 dependencies {
-    implementation("io.javaoperatorsdk:operator-framework-spring-boot-starter:6.1.2")
+    implementation("io.javaoperatorsdk:operator-framework-spring-boot-starter:6.4.1")
     compileOnly("org.projectlombok:lombok:1.18.42")
     annotationProcessor("org.projectlombok:lombok:1.18.42")
     implementation("com.samskivert:jmustache:1.16")

@@ -10,7 +10,7 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
@@ -34,7 +34,7 @@ public class NodeStatefulSet extends CRUDKubernetesDependentResource<StatefulSet
 
     @Override
     protected StatefulSet desired(CardanoNode cardanoNode, Context<CardanoNode> context) {
-        StatefulSet statefulSet = ReconcilerUtils.loadYaml(StatefulSet.class, NodeStatefulSet.class, "statefulset.yaml");
+        StatefulSet statefulSet = ReconcilerUtilsInternal.loadYaml(StatefulSet.class, NodeStatefulSet.class, "statefulset.yaml");
 
         var metadata = cardanoNode.getMetadata();
         var spec = cardanoNode.getSpec();

@@ -15,4 +15,13 @@ public class CardanoNodeStatus {
 
     @EqualsAndHashCode.Exclude
     private String lastReconciledAt;
+
+    // Yaci Indexer and UI status
+    private String indexerPhase;
+    private String indexerMessage;
+    private Integer indexerReadyReplicas;
+
+    private String indexerUiPhase;
+    private String indexerUiMessage;
+    private Integer indexerUiReadyReplicas;
 }

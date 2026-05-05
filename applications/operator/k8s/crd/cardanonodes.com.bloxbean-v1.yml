@@ -29,6 +29,14 @@ spec:
                 type: integer
               storage:
                 type: string
+              yaciIndexerEnabled:
+                type: boolean
+              yaciIndexerImage:
+                type: string
+              yaciIndexerUiImage:
+                type: string
+              yaciIndexerStorage:
+                type: string
             type: object
           status:
             properties:
@@ -45,6 +53,18 @@ spec:
               readyReplicas:
                 type: integer
               replicas:
+                type: integer
+              indexerPhase:
+                type: string
+              indexerMessage:
+                type: string
+              indexerReadyReplicas:
+                type: integer
+              indexerUiPhase:
+                type: string
+              indexerUiMessage:
+                type: string
+              indexerUiReadyReplicas:
                 type: integer
             type: object
         type: object

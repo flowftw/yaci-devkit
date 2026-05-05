@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cardano-node-indexer-ui
+  namespace: default
+  labels:
+    app: yaci-indexer-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yaci-indexer-ui
+  template:
+    metadata:
+      labels:
+        app: yaci-indexer-ui
+    spec:
+      containers:
+      - name: yaci-indexer-ui
+        image: bloxbean/yaci-viewer:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5173
+          name: http
+        env:
+        - name: PUBLIC_INDEXER_BASE_URL
+          value: "http://localhost:8080/api/v1"
+        - name: PUBLIC_INDEXER_WS_URL
+          value: "ws://localhost:8080/ws/liveblocks"

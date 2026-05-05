@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cardano-node-indexer
+  namespace: default
+  labels:
+    app: yaci-indexer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yaci-indexer
+  template:
+    metadata:
+      labels:
+        app: yaci-indexer
+    spec:
+      containers:
+      - name: yaci-indexer
+        image: bloxbean/yaci-cli:latest
+        imagePullPolicy: IfNotPresent
+        command: ["java"]
+        args: ["-jar", "/app/store/yaci-store.jar"]
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: SERVER_PORT
+          value: "8080"
+        - name: STORE_CARDANO_HOST
+          value: "localhost"
+        - name: STORE_CARDANO_PORT
+          value: "3001"
+        - name: STORE_CARDANO_N2C_ERA
+          value: "Conway"
+        - name: STORE_CARDANO_PROTOCOL_MAGIC
+          value: "42"
+        - name: STORE_CARDANO_BYRON_GENESIS_FILE
+          value: "/etc/cardano/devnet/byron-genesis.json"
+        - name: STORE_CARDANO_SHELLEY_GENESIS_FILE
+          value: "/etc/cardano/devnet/shelley-genesis.json"
+        - name: STORE_CARDANO_ALONZO_GENESIS_FILE
+          value: "/etc/cardano/devnet/alonzo-genesis.json"
+        - name: STORE_CARDANO_CONWAY_GENESIS_FILE
+          value: "/etc/cardano/devnet/conway-genesis.json"
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:h2:file:/data/storedb;MV_STORE=TRUE;AUTO_SERVER=TRUE;AUTO_RECONNECT=TRUE;LOCK_TIMEOUT=120000"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "sa"
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: "password"
+        - name: STORE_ACCOUNT_ENABLED
+          value: "true"
+        - name: STORE_ACCOUNT_API_ENABLED
+          value: "true"
+        - name: STORE_ACCOUNT_BALANCE_AGGREGATION_ENABLED
+          value: "true"
+        - name: STORE_ACCOUNT_HISTORY_CLEANUP_ENABLED
+          value: "false"
+        - name: STORE_ADAPOT_ENABLED
+          value: "true"
+        - name: STORE_ADAPOT_API_ENABLED
+          value: "true"
+        - name: STORE_GOVERNANCE_AGGR_ENABLED
+          value: "true"
+        - name: STORE_GOVERNANCE_AGGR_API_ENABLED
+          value: "true"
+        - name: STORE_LIVE_ENABLED
+          value: "true"
+        - name: STORE_BLOCKS_EPOCH_CALCULATION_INTERVAL
+          value: "3600"
+        - name: STORE_EPOCH_ENDPOINTS_EPOCH_LOCAL_ENABLED
+          value: "true"
+        - name: SPRING_BATCH_JOB_ENABLED
+          value: "false"
+        - name: SPRING_JPA_PROPERTIES_HIBERNATE_JDBC_BATCH_SIZE
+          value: "20"
+        - name: SPRING_JPA_PROPERTIES_HIBERNATE_ORDER_INSERTS
+          value: "true"
+        volumeMounts:
+        - name: indexer-data
+          mountPath: /data
+        - name: devnet-config
+          mountPath: /etc/cardano/devnet
+          readOnly: true
+      volumes:
+      - name: indexer-data
+        emptyDir: {}
+      - name: devnet-config
+        configMap:
+          name: devnet-config
