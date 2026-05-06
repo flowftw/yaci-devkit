@@ -20,7 +20,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 @KubernetesDependent
 public class YaciIndexerDeployment extends CRUDKubernetesDependentResource<Deployment, CardanoNode> {
 
-    private static final String DEFAULT_INDEXER_IMAGE = "bloxbean/yaci-cli:latest";
+    private static final String DEFAULT_INDEXER_IMAGE = "bloxbean/yaci-store:2.0.0";
 
     public YaciIndexerDeployment() {
         super(Deployment.class);

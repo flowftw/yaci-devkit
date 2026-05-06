@@ -18,7 +18,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 @KubernetesDependent
 public class YaciIndexerUiDeployment extends CRUDKubernetesDependentResource<Deployment, CardanoNode> {
 
-    private static final String DEFAULT_UI_IMAGE = "bloxbean/yaci-viewer:latest";
+    private static final String DEFAULT_UI_IMAGE = "bloxbean/yaci-viewer:0.10.6";
 
     public YaciIndexerUiDeployment() {
         super(Deployment.class);

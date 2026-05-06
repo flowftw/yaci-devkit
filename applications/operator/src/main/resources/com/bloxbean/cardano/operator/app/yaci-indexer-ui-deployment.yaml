@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: yaci-indexer-ui
-        image: bloxbean/yaci-viewer:latest
+        image: bloxbean/yaci-viewer:0.10.6
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 5173
