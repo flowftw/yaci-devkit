@@ -12,27 +12,27 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
 @KubernetesDependent
-public class YaciIndexerUiService extends CRUDKubernetesDependentResource<Service, CardanoNode> {
+public class YaciStoreUiService extends CRUDKubernetesDependentResource<Service, CardanoNode> {
 
-    public YaciIndexerUiService() {
+    public YaciStoreUiService() {
         super(Service.class);
     }
 
     @Override
     protected Service desired(CardanoNode primary, Context<CardanoNode> context) {
         Service svc = ReconcilerUtilsInternal.loadYaml(
-                Service.class, YaciIndexerUiService.class, "yaci-indexer-ui-service.yaml");
+                Service.class, YaciStoreUiService.class, "yaci-store-ui-service.yaml");
 
         var metadata = primary.getMetadata();
         String resourceName = metadata.getName();
         String namespace = metadata.getNamespace();
-        String svcName = resourceName + "-indexer-ui";
+        String svcName = resourceName + "-store-ui";
 
         svc.getMetadata().setName(svcName);
         svc.getMetadata().setNamespace(namespace);
 
         Map<String, String> labels = new HashMap<>();
-        labels.put("app", "yaci-indexer-ui");
+        labels.put("app", "yaci-store-ui");
         labels.put("cardano-node-resource", resourceName);
         labels.put("app.kubernetes.io/managed-by", "java-operator-sdk");
         svc.getMetadata().setLabels(labels);

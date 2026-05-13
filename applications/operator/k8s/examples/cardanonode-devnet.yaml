@@ -17,14 +17,14 @@ spec:
   # devnetConfigMap: cardano-node-devnet-config
   # devnetKeysSecret: cardano-node-devnet-keys
 
-  # --- Yaci Indexer & Indexer UI ---
-  # Enable to deploy yaci-store (indexer) and yaci-viewer (UI) alongside the devnet node.
+  # --- Yaci Store & Store UI ---
+  # Enable to deploy yaci-store and yaci-viewer (UI) alongside the devnet node.
   # Requires network=devnet.
-  yaciIndexerEnabled: true
+  yaciStoreEnabled: true
 
   # Optional: override default images
-  # yaciIndexerImage: bloxbean/yaci-cli:latest
-  # yaciIndexerUiImage: bloxbean/yaci-viewer:latest
+  # yaciStoreImage: bloxbean/yaci-cli:latest
+  # yaciStoreUiImage: bloxbean/yaci-viewer:latest
 
-  # Optional: persistent storage for the indexer database (default: 10Gi)
-  # yaciIndexerStorage: 10Gi
+  # Optional: persistent storage for the store database (default: 10Gi)
+  # yaciStoreStorage: 10Gi

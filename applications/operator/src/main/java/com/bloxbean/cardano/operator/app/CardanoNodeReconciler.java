@@ -19,10 +19,10 @@ import org.springframework.stereotype.Component;
         @Dependent(name = "devnetKeys", type = DevnetKeysSecret.class, reconcilePrecondition = DevnetModeCondition.class),
         @Dependent(name = "nodeSvc", type = NodeService.class),
         @Dependent(name = "nodeStatefulSet", type = NodeStatefulSet.class),
-        @Dependent(name = "yaciIndexer", type = YaciIndexerDeployment.class, reconcilePrecondition = YaciIndexerCondition.class),
-        @Dependent(name = "yaciIndexerSvc", type = YaciIndexerService.class, reconcilePrecondition = YaciIndexerCondition.class),
-        @Dependent(name = "yaciIndexerUi", type = YaciIndexerUiDeployment.class, reconcilePrecondition = YaciIndexerCondition.class),
-        @Dependent(name = "yaciIndexerUiSvc", type = YaciIndexerUiService.class, reconcilePrecondition = YaciIndexerCondition.class)
+        @Dependent(name = "yaciStore", type = YaciStoreDeployment.class, reconcilePrecondition = YaciStoreCondition.class),
+        @Dependent(name = "yaciStoreSvc", type = YaciStoreService.class, reconcilePrecondition = YaciStoreCondition.class),
+        @Dependent(name = "yaciStoreUi", type = YaciStoreUiDeployment.class, reconcilePrecondition = YaciStoreCondition.class),
+        @Dependent(name = "yaciStoreUiSvc", type = YaciStoreUiService.class, reconcilePrecondition = YaciStoreCondition.class)
 })
 public class CardanoNodeReconciler implements Reconciler<CardanoNode> {
 
@@ -33,18 +33,18 @@ public class CardanoNodeReconciler implements Reconciler<CardanoNode> {
 
         // Use getSecondaryResources (plural) to avoid "More than 1 secondary resource"
         // errors when multiple dependents of the same type exist in the workflow
-        String indexerDeployName = cardanoNode.getMetadata().getName() + "-indexer";
-        String indexerUiDeployName = cardanoNode.getMetadata().getName() + "-indexer-ui";
+        String storeDeployName = cardanoNode.getMetadata().getName() + "-store";
+        String storeUiDeployName = cardanoNode.getMetadata().getName() + "-store-ui";
 
         StatefulSet statefulSet = context.getSecondaryResources(StatefulSet.class).stream()
                 .findFirst().orElse(null);
 
-        Deployment indexerDeployment = context.getSecondaryResources(Deployment.class).stream()
-                .filter(d -> indexerDeployName.equals(d.getMetadata().getName()))
+        Deployment storeDeployment = context.getSecondaryResources(Deployment.class).stream()
+                .filter(d -> storeDeployName.equals(d.getMetadata().getName()))
                 .findFirst().orElse(null);
 
-        Deployment indexerUiDeployment = context.getSecondaryResources(Deployment.class).stream()
-                .filter(d -> indexerUiDeployName.equals(d.getMetadata().getName()))
+        Deployment storeUiDeployment = context.getSecondaryResources(Deployment.class).stream()
+                .filter(d -> storeUiDeployName.equals(d.getMetadata().getName()))
                 .findFirst().orElse(null);
 
         desired.setObservedGeneration(cardanoNode.getMetadata().getGeneration());
@@ -76,21 +76,21 @@ public class CardanoNodeReconciler implements Reconciler<CardanoNode> {
             }
         }
 
-        // Indexer status
-        if (!isIndexerEnabled(cardanoNode)) {
-            desired.setIndexerPhase(null);
-            desired.setIndexerMessage(null);
-            desired.setIndexerReadyReplicas(null);
-            desired.setIndexerUiPhase(null);
-            desired.setIndexerUiMessage(null);
-            desired.setIndexerUiReadyReplicas(null);
+        // Store status
+        if (!isStoreEnabled(cardanoNode)) {
+            desired.setStorePhase(null);
+            desired.setStoreMessage(null);
+            desired.setStoreReadyReplicas(null);
+            desired.setStoreUiPhase(null);
+            desired.setStoreUiMessage(null);
+            desired.setStoreUiReadyReplicas(null);
         } else {
-            computeDeploymentStatus(indexerDeployment, 1,
-                    desired::setIndexerPhase, desired::setIndexerMessage, desired::setIndexerReadyReplicas,
-                    "Yaci Indexer");
-            computeDeploymentStatus(indexerUiDeployment, 1,
-                    desired::setIndexerUiPhase, desired::setIndexerUiMessage, desired::setIndexerUiReadyReplicas,
-                    "Yaci Indexer UI");
+            computeDeploymentStatus(storeDeployment, 1,
+                    desired::setStorePhase, desired::setStoreMessage, desired::setStoreReadyReplicas,
+                    "Yaci Store");
+            computeDeploymentStatus(storeUiDeployment, 1,
+                    desired::setStoreUiPhase, desired::setStoreUiMessage, desired::setStoreUiReadyReplicas,
+                    "Yaci Store UI");
         }
 
         if (!statusEquals(current, desired)) {
@@ -102,9 +102,9 @@ public class CardanoNodeReconciler implements Reconciler<CardanoNode> {
         return UpdateControl.noUpdate();
     }
 
-    private boolean isIndexerEnabled(CardanoNode cardanoNode) {
+    private boolean isStoreEnabled(CardanoNode cardanoNode) {
         if (cardanoNode.getSpec() == null) return false;
-        if (cardanoNode.getSpec().getYaciIndexerEnabled() == null || !cardanoNode.getSpec().getYaciIndexerEnabled())
+        if (cardanoNode.getSpec().getYaciStoreEnabled() == null || !cardanoNode.getSpec().getYaciStoreEnabled())
             return false;
         String network = cardanoNode.getSpec().getNetwork();
         return "devnet".equalsIgnoreCase(network) || "local-devnet".equalsIgnoreCase(network);
@@ -146,12 +146,12 @@ public class CardanoNodeReconciler implements Reconciler<CardanoNode> {
         copy.setReadyReplicas(status.getReadyReplicas());
         copy.setObservedGeneration(status.getObservedGeneration());
         copy.setLastReconciledAt(status.getLastReconciledAt());
-        copy.setIndexerPhase(status.getIndexerPhase());
-        copy.setIndexerMessage(status.getIndexerMessage());
-        copy.setIndexerReadyReplicas(status.getIndexerReadyReplicas());
-        copy.setIndexerUiPhase(status.getIndexerUiPhase());
-        copy.setIndexerUiMessage(status.getIndexerUiMessage());
-        copy.setIndexerUiReadyReplicas(status.getIndexerUiReadyReplicas());
+        copy.setStorePhase(status.getStorePhase());
+        copy.setStoreMessage(status.getStoreMessage());
+        copy.setStoreReadyReplicas(status.getStoreReadyReplicas());
+        copy.setStoreUiPhase(status.getStoreUiPhase());
+        copy.setStoreUiMessage(status.getStoreUiMessage());
+        copy.setStoreUiReadyReplicas(status.getStoreUiReadyReplicas());
         return copy;
     }
 

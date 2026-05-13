@@ -16,12 +16,12 @@ public class CardanoNodeStatus {
     @EqualsAndHashCode.Exclude
     private String lastReconciledAt;
 
-    // Yaci Indexer and UI status
-    private String indexerPhase;
-    private String indexerMessage;
-    private Integer indexerReadyReplicas;
+    // Yaci Store and UI status
+    private String storePhase;
+    private String storeMessage;
+    private Integer storeReadyReplicas;
 
-    private String indexerUiPhase;
-    private String indexerUiMessage;
-    private Integer indexerUiReadyReplicas;
+    private String storeUiPhase;
+    private String storeUiMessage;
+    private Integer storeUiReadyReplicas;
 }

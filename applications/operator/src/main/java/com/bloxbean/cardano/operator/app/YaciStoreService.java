@@ -12,27 +12,27 @@ import java.util.HashMap;
 import java.util.Map;
 
 @KubernetesDependent
-public class YaciIndexerService extends CRUDKubernetesDependentResource<Service, CardanoNode> {
+public class YaciStoreService extends CRUDKubernetesDependentResource<Service, CardanoNode> {
 
-    public YaciIndexerService() {
+    public YaciStoreService() {
         super(Service.class);
     }
 
     @Override
     protected Service desired(CardanoNode primary, Context<CardanoNode> context) {
         Service svc = ReconcilerUtilsInternal.loadYaml(
-                Service.class, YaciIndexerService.class, "yaci-indexer-service.yaml");
+                Service.class, YaciStoreService.class, "yaci-store-service.yaml");
 
         var metadata = primary.getMetadata();
         String resourceName = metadata.getName();
         String namespace = metadata.getNamespace();
-        String svcName = resourceName + "-indexer";
+        String svcName = resourceName + "-store";
 
         svc.getMetadata().setName(svcName);
         svc.getMetadata().setNamespace(namespace);
 
         Map<String, String> labels = new HashMap<>();
-        labels.put("app", "yaci-indexer");
+        labels.put("app", "yaci-store");
         labels.put("cardano-node-resource", resourceName);
         labels.put("app.kubernetes.io/managed-by", "java-operator-sdk");
         svc.getMetadata().setLabels(labels);

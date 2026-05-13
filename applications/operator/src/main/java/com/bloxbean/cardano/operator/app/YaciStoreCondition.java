@@ -6,10 +6,10 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
 /**
- * Only reconcile Yaci Indexer and UI resources when the feature flag
+ * Only reconcile Yaci Store and UI resources when the feature flag
  * is enabled and the network is set to devnet.
  */
-public class YaciIndexerCondition implements Condition<HasMetadata, CardanoNode> {
+public class YaciStoreCondition implements Condition<HasMetadata, CardanoNode> {
 
     @Override
     public boolean isMet(DependentResource<HasMetadata, CardanoNode> dependentResource,
@@ -20,12 +20,12 @@ public class YaciIndexerCondition implements Condition<HasMetadata, CardanoNode>
         }
 
         // Feature flag must be explicitly enabled
-        if (primary.getSpec().getYaciIndexerEnabled() == null
-                || !primary.getSpec().getYaciIndexerEnabled()) {
+        if (primary.getSpec().getYaciStoreEnabled() == null
+                || !primary.getSpec().getYaciStoreEnabled()) {
             return false;
         }
 
-        // Indexer only supports devnet mode
+        // Store only supports devnet mode
         String network = primary.getSpec().getNetwork();
         return "devnet".equalsIgnoreCase(network) || "local-devnet".equalsIgnoreCase(network);
     }

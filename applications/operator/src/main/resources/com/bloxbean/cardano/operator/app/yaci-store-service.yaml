@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: cardano-node-indexer
+  name: cardano-node-store
   namespace: default
   labels:
-    app: yaci-indexer
+    app: yaci-store
 spec:
   selector:
-    app: yaci-indexer
+    app: yaci-store
   ports:
   - name: http
     port: 8080

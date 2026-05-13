@@ -9,43 +9,53 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
+import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 @KubernetesDependent
-public class YaciIndexerUiDeployment extends CRUDKubernetesDependentResource<Deployment, CardanoNode> {
+public class YaciStoreDeployment extends CRUDKubernetesDependentResource<Deployment, CardanoNode> {
 
-    private static final String DEFAULT_UI_IMAGE = "bloxbean/yaci-viewer:0.10.6";
+    private static final String DEFAULT_STORE_IMAGE = "bloxbean/yaci-store:2.0.0";
 
-    public YaciIndexerUiDeployment() {
+    public YaciStoreDeployment() {
         super(Deployment.class);
     }
+
+    // @Override
+    // protected ResourceID targetSecondaryResourceID(CardanoNode primary, Context<CardanoNode> context) {
+    //     // TODO Auto-generated method stub
+    //     context.getSecondaryResources(Deployment.class).stream().filter(deployment -> deployment.getMetadata().getName() == primary.getMetadata().getName() + "-");
+    //     return super.targetSecondaryResourceID(primary, context);
+    // }
 
     @Override
     protected Deployment desired(CardanoNode primary, Context<CardanoNode> context) {
         Deployment deployment = ReconcilerUtilsInternal.loadYaml(
-                Deployment.class, YaciIndexerUiDeployment.class, "yaci-indexer-ui-deployment.yaml");
+                Deployment.class, YaciStoreDeployment.class, "yaci-store-deployment.yaml");
 
         var metadata = primary.getMetadata();
         var spec = primary.getSpec();
 
         String resourceName = metadata.getName();
         String namespace = metadata.getNamespace();
-        String uiName = resourceName + "-indexer-ui";
-        String indexerSvcName = resourceName + "-indexer";
+        String storeName = resourceName + "-store";
 
-        String image = (spec != null && spec.getYaciIndexerUiImage() != null)
-                ? spec.getYaciIndexerUiImage()
-                : DEFAULT_UI_IMAGE;
+        String image = (spec != null && spec.getYaciStoreImage() != null)
+                ? spec.getYaciStoreImage()
+                : DEFAULT_STORE_IMAGE;
 
-        deployment.getMetadata().setName(uiName);
+        String nodeSvcName = resourceName; // headless service of the node StatefulSet
+
+        deployment.getMetadata().setName(storeName);
         deployment.getMetadata().setNamespace(namespace);
 
         Map<String, String> labels = new HashMap<>();
-        labels.put("app", "yaci-indexer-ui");
+        labels.put("app", "yaci-store");
         labels.put("cardano-node-resource", resourceName);
         labels.put("app.kubernetes.io/managed-by", "java-operator-sdk");
         deployment.getMetadata().setLabels(labels);
@@ -83,12 +93,25 @@ public class YaciIndexerUiDeployment extends CRUDKubernetesDependentResource<Dep
             Container container = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
             container.setImage(image);
 
-            // Point the UI at the indexer service
-            String indexerBaseUrl = "http://" + indexerSvcName + "." + namespace + ".svc.cluster.local:8080/api/v1";
-            String indexerWsUrl = "ws://" + indexerSvcName + "." + namespace + ".svc.cluster.local:8080/ws/liveblocks";
+            // Point the store at the node StatefulSet service
+            upsertEnvVar(container.getEnv(), "STORE_CARDANO_HOST", nodeSvcName, container::setEnv);
+        }
 
-            upsertEnvVar(container.getEnv(), "PUBLIC_INDEXER_BASE_URL", indexerBaseUrl, container::setEnv);
-            upsertEnvVar(container.getEnv(), "PUBLIC_INDEXER_WS_URL", indexerWsUrl, container::setEnv);
+        // Point the devnet-config volume at the correct ConfigMap
+        String configMapName = spec != null && spec.getDevnetConfigMap() != null
+                ? spec.getDevnetConfigMap()
+                : resourceName + "-devnet-config";
+
+        if (deployment.getSpec() != null
+                && deployment.getSpec().getTemplate() != null
+                && deployment.getSpec().getTemplate().getSpec() != null) {
+            PodSpec podSpec = deployment.getSpec().getTemplate().getSpec();
+            if (podSpec.getVolumes() != null) {
+                podSpec.getVolumes().stream()
+                        .filter(v -> "devnet-config".equals(v.getName()))
+                        .findFirst()
+                        .ifPresent(v -> v.getConfigMap().setName(configMapName));
+            }
         }
 
         return deployment;

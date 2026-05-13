@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: cardano-node-indexer
+  name: cardano-node-store
   namespace: default
   labels:
-    app: yaci-indexer
+    app: yaci-store
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: yaci-indexer
+      app: yaci-store
   template:
     metadata:
       labels:
-        app: yaci-indexer
+        app: yaci-store
     spec:
       containers:
-      - name: yaci-indexer
+      - name: yaci-store
         image: bloxbean/yaci-store:2.0.0
         imagePullPolicy: IfNotPresent
         ports:
@@ -74,13 +74,13 @@ spec:
         # - name: SPRING_JPA_PROPERTIES_HIBERNATE_ORDER_INSERTS
         #   value: "true"
         volumeMounts:
-        - name: indexer-data
+        - name: store-data
           mountPath: /data
         - name: devnet-config
           mountPath: /etc/cardano/devnet
           readOnly: true
       volumes:
-      - name: indexer-data
+      - name: store-data
         emptyDir: {}
       - name: devnet-config
         configMap:

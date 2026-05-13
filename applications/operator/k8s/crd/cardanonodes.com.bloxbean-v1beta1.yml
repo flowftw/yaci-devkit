@@ -29,13 +29,13 @@ spec:
               type: integer
             storage:
               type: string
-            yaciIndexerEnabled:
+            yaciStoreEnabled:
               type: boolean
-            yaciIndexerImage:
+            yaciStoreImage:
               type: string
-            yaciIndexerUiImage:
+            yaciStoreUiImage:
               type: string
-            yaciIndexerStorage:
+            yaciStoreStorage:
               type: string
           type: object
         status:
@@ -54,17 +54,17 @@ spec:
               type: integer
             replicas:
               type: integer
-            indexerPhase:
+            storePhase:
               type: string
-            indexerMessage:
+            storeMessage:
               type: string
-            indexerReadyReplicas:
+            storeReadyReplicas:
               type: integer
-            indexerUiPhase:
+            storeUiPhase:
               type: string
-            indexerUiMessage:
+            storeUiMessage:
               type: string
-            indexerUiReadyReplicas:
+            storeUiReadyReplicas:
               type: integer
           type: object
       type: object
