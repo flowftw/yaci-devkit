@@ -1,14 +1,11 @@
 package com.bloxbean.cardano.operator.app;
 
-import io.fabric8.kubernetes.api.model.OwnerReference;
-import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @KubernetesDependent
@@ -23,29 +20,15 @@ public class NodeService extends CRUDKubernetesDependentResource<Service, Cardan
         Service svc = ReconcilerUtilsInternal.loadYaml(
                 Service.class, NodeService.class, "node-service.yaml");
 
-        var metadata = primary.getMetadata();
-        String resourceName = metadata.getName();
-        String namespace = metadata.getNamespace();
+        String resourceName = primary.getMetadata().getName();
+        Map<String, String> labels = KubernetesResourceHelpers.labels("cardano-node", resourceName);
+        KubernetesResourceHelpers.applyMetadata(svc, primary, resourceName, labels);
 
-        svc.getMetadata().setName(resourceName);
-        svc.getMetadata().setNamespace(namespace);
-
-        Map<String, String> labels = new HashMap<>();
-        labels.put("app", "cardano-node");
-        labels.put("cardano-node-resource", resourceName);
-        labels.put("app.kubernetes.io/managed-by", "java-operator-sdk");
-        svc.getMetadata().setLabels(labels);
-
-        if (metadata.getUid() != null) {
-            OwnerReference ownerReference = new OwnerReferenceBuilder()
-                    .withApiVersion(primary.getApiVersion())
-                    .withKind(primary.getKind())
-                    .withName(resourceName)
-                    .withUid(metadata.getUid())
-                    .withController(true)
-                    .withBlockOwnerDeletion(true)
-                    .build();
-            svc.getMetadata().setOwnerReferences(java.util.Collections.singletonList(ownerReference));
+        // Scope the selector to this CR's pods. The template ships with a generic
+        // "app: cardano-node" selector; without overriding it, two CardanoNode CRs in
+        // the same namespace would each select the union of all node pods.
+        if (svc.getSpec() != null) {
+            svc.getSpec().setSelector(labels);
         }
 
         return svc;

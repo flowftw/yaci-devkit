@@ -19,7 +19,8 @@ import org.springframework.stereotype.Component;
         @Dependent(name = "devnetKeys", type = DevnetKeysSecret.class, reconcilePrecondition = DevnetModeCondition.class),
         @Dependent(name = "nodeSvc", type = NodeService.class),
         @Dependent(name = "nodeStatefulSet", type = NodeStatefulSet.class),
-        @Dependent(name = "yaciStore", type = YaciStoreDeployment.class, reconcilePrecondition = YaciStoreCondition.class),
+        @Dependent(name = "yaciStorePvc", type = YaciStorePvc.class, reconcilePrecondition = YaciStoreCondition.class),
+        @Dependent(name = "yaciStore", type = YaciStoreDeployment.class, reconcilePrecondition = YaciStoreCondition.class, dependsOn = {"yaciStorePvc"}),
         @Dependent(name = "yaciStoreSvc", type = YaciStoreService.class, reconcilePrecondition = YaciStoreCondition.class),
         @Dependent(name = "yaciStoreUi", type = YaciStoreUiDeployment.class, reconcilePrecondition = YaciStoreCondition.class),
         @Dependent(name = "yaciStoreUiSvc", type = YaciStoreUiService.class, reconcilePrecondition = YaciStoreCondition.class)

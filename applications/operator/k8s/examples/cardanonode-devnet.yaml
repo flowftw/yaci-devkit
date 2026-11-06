@@ -7,7 +7,7 @@ spec:
   # Devnet mode keeps cardano-node image, but switches to devnet command/config mounts
   network: devnet
 
-  # Optional (default: blinklabs/cardano-node:main)
+  # Optional (default: blinklabs/cardano-node:10.5.1)
   image: blinklabs/cardano-node:10.5.1
 
   replicas: 1
@@ -23,8 +23,8 @@ spec:
   yaciStoreEnabled: true
 
   # Optional: override default images
-  # yaciStoreImage: bloxbean/yaci-cli:latest
-  # yaciStoreUiImage: bloxbean/yaci-viewer:latest
+  # yaciStoreImage: bloxbean/yaci-store:2.0.0
+  # yaciStoreUiImage: bloxbean/yaci-viewer:0.10.6
 
   # Optional: persistent storage for the store database (default: 10Gi)
   # yaciStoreStorage: 10Gi

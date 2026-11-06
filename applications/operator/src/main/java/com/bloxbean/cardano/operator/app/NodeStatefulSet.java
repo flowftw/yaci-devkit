@@ -2,11 +2,9 @@ package com.bloxbean.cardano.operator.app;
 
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPortBuilder;
-import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.OwnerReference;
-import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -16,7 +14,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -40,35 +38,15 @@ public class NodeStatefulSet extends CRUDKubernetesDependentResource<StatefulSet
         var spec = cardanoNode.getSpec();
 
         String resourceName = metadata.getName();
-        String namespace = metadata.getNamespace();
-
         String network = spec != null && spec.getNetwork() != null ? spec.getNetwork() : DEFAULT_NETWORK;
-        boolean devnet = "devnet".equalsIgnoreCase(network) || "local-devnet".equalsIgnoreCase(network);
+        boolean devnet = isDevnet(network);
 
         String image = (spec != null && spec.getImage() != null) ? spec.getImage() : DEFAULT_IMAGE;
         int replicas = spec != null && spec.getReplicas() != null ? spec.getReplicas() : DEFAULT_REPLICAS;
         String storage = (spec != null && spec.getStorage() != null) ? spec.getStorage() : DEFAULT_STORAGE;
 
-        statefulSet.getMetadata().setName(resourceName);
-        statefulSet.getMetadata().setNamespace(namespace);
-
-        Map<String, String> labels = new HashMap<>();
-        labels.put("app", "cardano-node");
-        labels.put("cardano-node-resource", resourceName);
-        labels.put("app.kubernetes.io/managed-by", "java-operator-sdk");
-        statefulSet.getMetadata().setLabels(labels);
-
-        if (metadata.getUid() != null) {
-            OwnerReference ownerReference = new OwnerReferenceBuilder()
-                    .withApiVersion(cardanoNode.getApiVersion())
-                    .withKind(cardanoNode.getKind())
-                    .withName(resourceName)
-                    .withUid(metadata.getUid())
-                    .withController(true)
-                    .withBlockOwnerDeletion(true)
-                    .build();
-            statefulSet.getMetadata().setOwnerReferences(java.util.Collections.singletonList(ownerReference));
-        }
+        Map<String, String> labels = KubernetesResourceHelpers.labels("cardano-node", resourceName);
+        KubernetesResourceHelpers.applyMetadata(statefulSet, cardanoNode, resourceName, labels);
 
         if (statefulSet.getSpec() != null) {
             statefulSet.getSpec().setReplicas(replicas);
@@ -105,7 +83,7 @@ public class NodeStatefulSet extends CRUDKubernetesDependentResource<StatefulSet
                 if (devnet) {
                     configureDevnetContainer(cardanoNode, spec, podSpec, container);
                 } else {
-                    upsertEnvVar(container.getEnv(), "NETWORK", network, container::setEnv);
+                    KubernetesResourceHelpers.upsertEnvVar(container.getEnv(), "NETWORK", network, container::setEnv);
                 }
             }
         }
@@ -122,11 +100,20 @@ public class NodeStatefulSet extends CRUDKubernetesDependentResource<StatefulSet
                 ? spec.getDevnetKeysSecret()
                 : baseName + "-devnet-keys";
 
-        podSpec.setVolumes(List.of(
-                new VolumeBuilder().withName("node-ipc").withNewEmptyDir().endEmptyDir().build(),
-                new VolumeBuilder().withName("devnet-config").withNewConfigMap().withName(configMapName).endConfigMap().build(),
-                new VolumeBuilder().withName("devnet-keys").withNewSecret().withSecretName(keysSecretName).withDefaultMode(256).endSecret().build()
-        ));
+        // Merge devnet volumes into whatever the template already declared, instead
+        // of replacing the whole list, so volumes added to the template later are
+        // not silently dropped.
+        Map<String, Volume> volumesByName = new LinkedHashMap<>();
+        if (podSpec.getVolumes() != null) {
+            podSpec.getVolumes().forEach(v -> volumesByName.put(v.getName(), v));
+        }
+        volumesByName.put("node-ipc",
+                new VolumeBuilder().withName("node-ipc").withNewEmptyDir().endEmptyDir().build());
+        volumesByName.put("devnet-config",
+                new VolumeBuilder().withName("devnet-config").withNewConfigMap().withName(configMapName).endConfigMap().build());
+        volumesByName.put("devnet-keys",
+                new VolumeBuilder().withName("devnet-keys").withNewSecret().withSecretName(keysSecretName).withDefaultMode(256).endSecret().build());
+        podSpec.setVolumes(new ArrayList<>(volumesByName.values()));
 
         container.setVolumeMounts(List.of(
                 new VolumeMountBuilder().withName("node-data").withMountPath("/data").build(),
@@ -155,30 +142,11 @@ public class NodeStatefulSet extends CRUDKubernetesDependentResource<StatefulSet
                 new ContainerPortBuilder().withName("prometheus").withContainerPort(12788).build()
         ));
 
-        upsertEnvVar(container.getEnv(), "CARDANO_NODE_SOCKET_PATH", "/ipc/node.sock", container::setEnv);
-        upsertEnvVar(container.getEnv(), "NETWORK", "devnet", container::setEnv);
+        KubernetesResourceHelpers.upsertEnvVar(container.getEnv(), "CARDANO_NODE_SOCKET_PATH", "/ipc/node.sock", container::setEnv);
+        KubernetesResourceHelpers.upsertEnvVar(container.getEnv(), "NETWORK", "devnet", container::setEnv);
     }
 
-    private void upsertEnvVar(List<EnvVar> envVars, String key, String value,
-                              java.util.function.Consumer<List<EnvVar>> setter) {
-        List<EnvVar> values = envVars != null ? new ArrayList<>(envVars) : new ArrayList<>();
-
-        boolean found = false;
-        for (EnvVar envVar : values) {
-            if (key.equals(envVar.getName())) {
-                envVar.setValue(value);
-                found = true;
-                break;
-            }
-        }
-
-        if (!found) {
-            EnvVar envVar = new EnvVar();
-            envVar.setName(key);
-            envVar.setValue(value);
-            values.add(envVar);
-        }
-
-        setter.accept(values);
+    static boolean isDevnet(String network) {
+        return "devnet".equalsIgnoreCase(network) || "local-devnet".equalsIgnoreCase(network);
     }
 }

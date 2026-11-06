@@ -81,7 +81,8 @@ spec:
           readOnly: true
       volumes:
       - name: store-data
-        emptyDir: {}
+        persistentVolumeClaim:
+          claimName: placeholder
       - name: devnet-config
         configMap:
           name: devnet-config

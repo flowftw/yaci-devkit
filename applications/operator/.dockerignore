@@ -1,0 +1,17 @@
+# VCS
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.iml
+
+# Gradle/local build output
+.gradle
+build
+**/build
+**/.gradle
+
+# OS
+.DS_Store

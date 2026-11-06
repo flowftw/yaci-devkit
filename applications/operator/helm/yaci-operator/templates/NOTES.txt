@@ -1,0 +1,66 @@
+🎉 Yaci Operator has been deployed!
+
+{{- if .Values.crds.install }}
+✅ The CardanoNode CRD has been installed.
+{{- else }}
+⚠️  CRD installation was skipped (crds.install=false). Make sure the CRD is already present in the cluster.
+{{- end }}
+
+The operator is running in namespace: {{ .Release.Namespace }}
+{{- if not .Values.rbac.clusterWide }}
+Scope: namespace ({{ include "yaci-operator.targetNamespaces" . }})
+{{- else }}
+Scope: cluster-wide
+{{- end }}
+
+---
+
+📌 **Create your first CardanoNode resource:**
+
+```yaml
+# Mainnet node (minimal)
+kubectl apply -f - <<EOF
+apiVersion: com.bloxbean/v1
+kind: CardanoNode
+metadata:
+  name: my-cardano-node
+  namespace: {{ .Release.Namespace }}
+spec:
+  image: {{ .Values.defaultNodeImage }}
+  replicas: 1
+  network: mainnet
+EOF
+```
+
+```yaml
+# Devnet node with Yaci Store and Store UI
+kubectl apply -f - <<EOF
+apiVersion: com.bloxbean/v1
+kind: CardanoNode
+metadata:
+  name: my-devnet-node
+  namespace: {{ .Release.Namespace }}
+spec:
+  network: devnet
+  image: {{ .Values.defaultNodeImage }}
+  replicas: 1
+  yaciStoreEnabled: true
+EOF
+```
+
+📊 **Check status:**
+
+```bash
+kubectl get cardanonodes -n {{ .Release.Namespace }}
+kubectl describe cardanonode my-cardano-node -n {{ .Release.Namespace }}
+```
+
+🔍 **View operator logs:**
+
+```bash
+kubectl logs -n {{ .Release.Namespace }} -l app.kubernetes.io/name=yaci-operator -f
+```
+
+---
+
+For more examples, see: https://github.com/bloxbean/yaci-devkit

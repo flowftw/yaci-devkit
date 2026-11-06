@@ -1,0 +1,147 @@
+# --------------------------------------------------------------------------- #
+# Yaci Operator — Helm chart values
+# --------------------------------------------------------------------------- #
+
+# -- Number of operator replicas to deploy (should usually be 1 for operators)
+replicaCount: 1
+
+# --------------------------------------------------------------------------- #
+# Image
+# --------------------------------------------------------------------------- #
+image:
+  # -- Container image registry
+  registry: ghcr.io
+  # -- Image repository path
+  repository: bloxbean/yaci-operator
+  # -- Image tag (overrides the default Chart appVersion)
+  tag: ""
+  # -- Image pull policy
+  pullPolicy: IfNotPresent
+
+# -- Image pull secrets (list of existing secret names)
+imagePullSecrets: []
+
+# -- Override the full name of the chart (used for resource naming)
+nameOverride: ""
+# -- Override the full name prefix
+fullnameOverride: ""
+
+# --------------------------------------------------------------------------- #
+# ServiceAccount
+# --------------------------------------------------------------------------- #
+serviceAccount:
+  # -- Create a ServiceAccount for the operator
+  create: true
+  # -- Annotations for the ServiceAccount
+  annotations: {}
+  # -- ServiceAccount name (auto-generated if empty)
+  name: ""
+
+# --------------------------------------------------------------------------- #
+# RBAC
+# --------------------------------------------------------------------------- #
+rbac:
+  # -- Create RBAC resources (ClusterRole/ClusterRoleBinding or Role/RoleBinding)
+  create: true
+  # -- When true, creates ClusterRole + ClusterRoleBinding (operator watches all namespaces).
+  # When false, creates Role + RoleBinding (operator watches only its own namespace).
+  clusterWide: false
+  # -- When clusterWide is false, restrict the operator to these namespaces.
+  # If empty, defaults to the release namespace.
+  # The operator uses this list to set the JAVA_OPERATOR_SDK_NAMESPACES env var.
+  targetNamespaces: []
+
+# --------------------------------------------------------------------------- #
+# CRDs
+# --------------------------------------------------------------------------- #
+crds:
+  # -- Install the CardanoNode CRD as part of the chart
+  install: true
+
+# --------------------------------------------------------------------------- #
+# Operator configuration
+# --------------------------------------------------------------------------- #
+operator:
+  # -- Leader election lease duration
+  leaderElectionLeaseDuration: 30s
+  # -- Leader election renew deadline
+  leaderElectionRenewDeadline: 20s
+  # -- Leader election retry period
+  leaderElectionRetryPeriod: 5s
+
+# --------------------------------------------------------------------------- #
+# Deployment configuration
+# --------------------------------------------------------------------------- #
+# -- Pod annotations
+podAnnotations: {}
+# -- Pod labels (added to both deployment and pod)
+podLabels: {}
+
+# -- Pod security context (applies to all containers in the pod)
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  runAsGroup: 1001
+  fsGroup: 1001
+
+# -- Container security context
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false
+
+# -- Resource requests and limits for the operator container
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+# -- Node selector for pod scheduling
+nodeSelector: {}
+
+# -- Tolerations for pod scheduling
+tolerations: []
+
+# -- Affinity for pod scheduling
+affinity: {}
+
+# --------------------------------------------------------------------------- #
+# Service (optional — exposes metrics and health endpoints)
+# --------------------------------------------------------------------------- #
+service:
+  # -- Create a Service for the operator
+  enabled: false
+  # -- Service type
+  type: ClusterIP
+  # -- Service port
+  port: 8080
+  # -- Target port on the container
+  targetPort: 8080
+  # -- Service annotations
+  annotations: {}
+  # -- Extra labels on the Service
+  labels: {}
+
+# --------------------------------------------------------------------------- #
+# Environment variables
+# --------------------------------------------------------------------------- #
+# -- Extra environment variables passed to the operator container
+env: []
+  # - name: FOO
+  #   value: bar
+
+# Extra volumes and volume mounts
+volumes: []
+volumeMounts: []
+
+# --------------------------------------------------------------------------- #
+# Default Cardano Node image (used as fallback in the operator code)
+# --------------------------------------------------------------------------- #
+defaultNodeImage: blinklabs/cardano-node:10.5.1
+defaultYaciStoreImage: bloxbean/yaci-store:2.0.0
+defaultYaciStoreUiImage: bloxbean/yaci-viewer:0.10.6

@@ -1,0 +1,17 @@
+# Patterns to ignore when building packages.
+# This supports shell glob matching, relative path matching, and negation.
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temp files
+*.tgz
+*.tar.gz

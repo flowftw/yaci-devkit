@@ -26,13 +26,13 @@ public class CardanoNodeSpec {
 
     /**
      * Docker image for the Yaci Store (yaci-store).
-     * Default: bloxbean/yaci-cli:latest
+     * Default: bloxbean/yaci-store:2.0.0
      */
     private String yaciStoreImage;
 
     /**
      * Docker image for the Yaci Store UI (yaci-viewer).
-     * Default: bloxbean/yaci-viewer:latest
+     * Default: bloxbean/yaci-viewer:0.10.6
      */
     private String yaciStoreUiImage;
 

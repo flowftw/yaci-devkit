@@ -1,14 +1,11 @@
 package com.bloxbean.cardano.operator.app;
 
-import io.fabric8.kubernetes.api.model.OwnerReference;
-import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @KubernetesDependent
@@ -23,30 +20,13 @@ public class YaciStoreService extends CRUDKubernetesDependentResource<Service, C
         Service svc = ReconcilerUtilsInternal.loadYaml(
                 Service.class, YaciStoreService.class, "yaci-store-service.yaml");
 
-        var metadata = primary.getMetadata();
-        String resourceName = metadata.getName();
-        String namespace = metadata.getNamespace();
-        String svcName = resourceName + "-store";
+        String resourceName = primary.getMetadata().getName();
+        Map<String, String> labels = KubernetesResourceHelpers.labels("yaci-store", resourceName);
+        KubernetesResourceHelpers.applyMetadata(svc, primary, resourceName + "-store", labels);
 
-        svc.getMetadata().setName(svcName);
-        svc.getMetadata().setNamespace(namespace);
-
-        Map<String, String> labels = new HashMap<>();
-        labels.put("app", "yaci-store");
-        labels.put("cardano-node-resource", resourceName);
-        labels.put("app.kubernetes.io/managed-by", "java-operator-sdk");
-        svc.getMetadata().setLabels(labels);
-
-        if (metadata.getUid() != null) {
-            OwnerReference ownerReference = new OwnerReferenceBuilder()
-                    .withApiVersion(primary.getApiVersion())
-                    .withKind(primary.getKind())
-                    .withName(resourceName)
-                    .withUid(metadata.getUid())
-                    .withController(true)
-                    .withBlockOwnerDeletion(true)
-                    .build();
-            svc.getMetadata().setOwnerReferences(java.util.Collections.singletonList(ownerReference));
+        // Scope the selector to this CR's store pods (see NodeService for rationale).
+        if (svc.getSpec() != null) {
+            svc.getSpec().setSelector(labels);
         }
 
         return svc;

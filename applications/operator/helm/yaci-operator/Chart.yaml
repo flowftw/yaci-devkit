@@ -1,0 +1,17 @@
+apiVersion: v2
+name: yaci-operator
+description: Kubernetes operator for managing Cardano nodes and Yaci Store on Kubernetes
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - cardano
+  - blockchain
+  - operator
+  - kubernetes
+home: https://github.com/bloxbean/yaci-devkit
+sources:
+  - https://github.com/bloxbean/yaci-devkit
+maintainers:
+  - name: bloxbean
+    email: info@bloxbean.com
